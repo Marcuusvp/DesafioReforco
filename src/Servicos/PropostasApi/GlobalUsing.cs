@@ -1,0 +1,13 @@
+﻿global using Carter;
+global using Mapster;
+global using MediatR;
+global using BuildingBlocks.CQRS;
+global using Microsoft.EntityFrameworkCore;
+global using CSharpFunctionalExtensions;
+global using BuildingBlocks.Commons;
+global using BuildingBlocks.Behaviors;
+global using BuildingBlocks.Exceptions.Handler;
+global using FluentValidation;
+global using PropostasApi.Dominio;
+global using PropostasApi.Dominio.Proposta.Infra;
+global using Dapper;
