@@ -4,7 +4,7 @@ using PropostasApi.Exceptions;
 
 namespace PropostasApi.Dominio.Proposta.Aplicacao.CriarProposta
 {
-    public record CriarPropostaCommand(string Cpf, decimal Rendimento, PropostaEndereco Endereco, string Telefone, string Email, string Agente, string Conveniada, int TipoOperacao) : ICommand<CriarPropostaResult>;
+    public record CriarPropostaCommand(string Cpf, decimal Rendimento, PropostaEndereco Endereco, string Telefone, string Email, string Agente, string Conveniada, int TipoOperacao) : ICommand<Result<CriarPropostaResult>>;
     public record PropostaEndereco(string Logradouro, string Bairro, string Cep, int Numero, string Cidade, string Estado, string? Complemento);
     public record CriarPropostaResult(Guid Id);
 
@@ -20,21 +20,21 @@ namespace PropostasApi.Dominio.Proposta.Aplicacao.CriarProposta
         }
     }
 
-    internal class CriarPropostaHandler(PropostasRepositorio propostasRepositorio) : ICommandHandler<CriarPropostaCommand, CriarPropostaResult>
+    internal class CriarPropostaHandler(PropostasRepositorio propostasRepositorio) : ICommandHandler<CriarPropostaCommand, Result<CriarPropostaResult>>
     {
-        public async Task<CriarPropostaResult> Handle(CriarPropostaCommand command, CancellationToken cancellationToken)
+        public async Task<Result<CriarPropostaResult>> Handle(CriarPropostaCommand command, CancellationToken cancellationToken)
         {
             var clienteBloqueado = await propostasRepositorio.CpfBloqueado(command.Cpf);
             if (clienteBloqueado)
-                throw new PropostaInvalidaException("Cliente bloqueado");
+                return Result.Failure<CriarPropostaResult>("Cliente bloqueado");
 
             var clienteComPropostaAberta = await propostasRepositorio.ClientePossuiPropostaAtiva(command.Cpf);
             if (clienteComPropostaAberta)
-                throw new PropostaInvalidaException("Cliente possui uma proposta ativa");
+                return Result.Failure<CriarPropostaResult>("Cliente possui proposta ativa");
 
             var agenteAtivo = await propostasRepositorio.AgenteAtivo(command.Agente);
             if (!agenteAtivo)
-                throw new PropostaInvalidaException("Agente inativo");
+                return Result.Failure<CriarPropostaResult>("Agente inativo");
 
             var conveniada = await propostasRepositorio.BuscarConveniada(command.Conveniada, cancellationToken);
 
@@ -59,12 +59,12 @@ namespace PropostasApi.Dominio.Proposta.Aplicacao.CriarProposta
                 tipoOperacao: command.TipoOperacao);
 
             if (propostaCredito.IsFailure)
-                throw new PropostaInvalidaException(propostaCredito.Error);
+                return Result.Failure<CriarPropostaResult>(propostaCredito.Error);
 
             await propostasRepositorio.GravarProposta(propostaCredito.Value, cancellationToken);
             await propostasRepositorio.Save();
 
-            return new CriarPropostaResult(propostaCredito.Value.Id);
+            return Result.Success(new CriarPropostaResult(propostaCredito.Value.Id));
         }
     }
 }
