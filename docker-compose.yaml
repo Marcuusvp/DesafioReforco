@@ -8,8 +8,4 @@ services:
     environment:
       SA_PASSWORD: "SenhaSegura@123"
       ACCEPT_EULA: "Y"
-  propostasapi:
-    image: propostasapi
-    build:
-      context: .
-      dockerfile: src/Servicos/PropostasApi/Dockerfile
+
